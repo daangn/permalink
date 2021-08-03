@@ -39,11 +39,10 @@ function ensureTrailingSlash(pathLike) {
 }
 
 export function parse(urlLike) {
-  const {
-    href,
-    origin,
-    pathname,
-  } = new URL(urlLike);
+  const url = new URL(urlLike);
+  url.pathname = ensureTrailingSlash(url.pathname);
+
+  const { href, origin, pathname } = url;
 
   const {
     country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]],
@@ -63,9 +62,9 @@ export function parse(urlLike) {
   }
 
   return {
-    href: ensureTrailingSlash(href),
+    href,
     origin,
-    pathname: ensureTrailingSlash(pathname),
+    pathname,
     country,
     lang,
     contentType,
@@ -87,7 +86,7 @@ export function normalize({ country, contentType, id }) {
     throw new TypeError('Invalid permalink');
   }
 
-  return components.join('/') + '/';
+  return ensureTrailingSlash(components.join('/'));
 };
 
 export function canonicalize(permalink, title) {
@@ -110,5 +109,5 @@ export function canonicalize(permalink, title) {
     throw new TypeError('Invalid permalink');
   }
 
-  return components.join('/') + '/';
+  return ensureTrailingSlash(components.join('/'));
 };

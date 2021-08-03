@@ -14,25 +14,12 @@ const wellKnownOriginToCountry = {
   'https://kr.karrotmarket.com': 'KR',
 };
 
-const wellKnownCountryToOrigin = {
-  'CA': 'https://ca.karrotmarket.com',
-  'JP': 'https://jp.karrotmarket.com',
-  'UK': 'https://uk.karrotmarket.com',
-  'US': 'https://us.karrotmarket.com',
-  'KR': 'https://www.daangn.com',
-};
-
 const wellKnownCountryToLanguage = {
   'CA': 'en',
   'JP': 'ja',
   'UK': 'en',
   'US': 'en',
   'KR': 'ko',
-};
-
-const aliases = {
-  'https://daangn.com': 'https://www.daangn.com',
-  'https://karrotmarket.com': 'https://www.karrotmarket.com',
 };
 
 test('parse', t => {
@@ -126,7 +113,7 @@ test('parse', t => {
         id: 'id1018769995',
         data: null,
       },
-      `can skip lang because ${country} is well-known`,
+      `it can skip lang because ${country} is well-known`,
     );
   }
 
@@ -219,6 +206,6 @@ test('canonicalize', t => {
   };
   t.throws(
     () => canonicalize(invalid, ''),
-    't should throw on invalid object',
+    'it should throw on invalid object',
   );
 });
