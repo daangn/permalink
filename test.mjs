@@ -174,7 +174,7 @@ test('normalize', t => {
     country: null,
     lang: null,
     contentType: 'app',
-    ttle: null,
+    title: null,
     id: 'id1018769995',
     data: null,
   };
@@ -188,7 +188,7 @@ test('canonicalize', t => {
   const permalink1 = parse('https://www.daangn.com/KR/app/id1018769995/');
   t.equal(
     canonicalize(permalink1, '당근마켓-대한민국-1등-동네-앱'),
-    'https://www.daangn.com/ko/app/당근마켓-대한민국-1등-동네-앱-id1018769995/',
+    encodeURI('https://www.daangn.com/ko/app/당근마켓-대한민국-1등-동네-앱-id1018769995/'),
   );
 
   t.throws(

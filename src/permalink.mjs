@@ -102,7 +102,7 @@ export function canonicalize(permalink, title) {
     canonicalOrigin,
     lang || wellKnownCountryToLanguage[country],
     contentType,
-    slugify(`${title || ''}-${id}`),
+    encodeURIComponent(slugify(`${title || ''}-${id}`)),
   ];
 
   if (!components.every(Boolean)) {
