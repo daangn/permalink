@@ -54,7 +54,7 @@ export type Permalink = {
    * It (probably) is encoded via MessagePack + Base58 codec
    * @see https://github.com/daangn/urlpack/tree/main/packages/json
    */
-  dataString: string | null,
+  data: string | null,
 };
 
 export function parse(urlLike: string): Permalink;
