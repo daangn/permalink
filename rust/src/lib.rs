@@ -1,6 +1,9 @@
+mod cjk_slug;
+
 use std::{str::FromStr, fmt::Display};
 
-use percent_encoding::percent_decode_str;
+use cjk_slug::slugify;
+use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use pest::Parser;
 use pest_derive::Parser;
 use url::Url;
@@ -58,15 +61,52 @@ pub fn normalize(permalink: Permalink) -> String {
 }
 
 pub fn canonicalize(permalink: Permalink, title: String) -> String {
+    const NON_URLSAFE: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+        .add(b' ')
+        .add(b'!')
+        .add(b'"')
+        .add(b'#')
+        .add(b'$')
+        .add(b'%')
+        .add(b'&')
+        .add(b'\'')
+        .add(b'(')
+        .add(b')')
+        .add(b'*')
+        .add(b'+')
+        .add(b',')
+        .add(b'.')
+        .add(b'/')
+        .add(b':')
+        .add(b';')
+        .add(b'<')
+        .add(b'=')
+        .add(b'>')
+        .add(b'?')
+        .add(b'@')
+        .add(b'[')
+        .add(b'\\')
+        .add(b']')
+        .add(b'^')
+        .add(b'`')
+        .add(b'{')
+        .add(b'|')
+        .add(b'}')
+        .add(b'~');
+
     let origin = well_known_origin_from_country(permalink.country);
     format!(
         "{}/{}/{}/{}/",
         origin,
         permalink.country,
         permalink.service_type,
-        vec![title, permalink.id].join("-"),
+        utf8_percent_encode(
+            slugify(format!("{}-{}", title, permalink.id).as_str()).as_str(),
+            NON_URLSAFE,
+        ),
     )
 }
+
 
 impl Default for Permalink {
     fn default() -> Self {
@@ -75,9 +115,21 @@ impl Default for Permalink {
             language: WellKnownLanguage::KO,
             service_type: "about".to_string(),
             title: None,
-            id: "home".to_string(),
+            id: "blank".to_string(),
             data: None,
         }
+    }
+}
+
+impl Display for Permalink {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(fmt, "permalink")?;
+        writeln!(fmt, "\tcountry: {}", self.country)?;
+        writeln!(fmt, "\tlanguage: {}", self.language)?;
+        writeln!(fmt, "\tservice_type: {}", self.service_type)?;
+        writeln!(fmt, "\ttitle: {:?}", self.title)?;
+        writeln!(fmt, "\tid: {}", self.id)?;
+        writeln!(fmt, "\tdata: {:?}", self.data)
     }
 }
 
@@ -108,25 +160,50 @@ impl TryFrom<Url> for Permalink {
 
         let mut pathname_rules = pathname.into_inner();
 
-        let mut chars = pathname_rules.next().unwrap().as_str().chars();
+        let mut chars = pathname_rules
+            .next()
+            .unwrap()
+            .as_str()
+            .chars();
         chars.next_back();
         permalink.country = WellKnownCountry::from_str(chars.as_str())?;
 
-        let mut chars = pathname_rules.next().unwrap().as_str().chars();
+        let mut chars = pathname_rules
+            .next()
+            .unwrap()
+            .as_str()
+            .chars();
         chars.next_back();
         permalink.service_type = chars.as_str().to_string();
 
-        let mut slug_rules = pathname_rules.next().unwrap().into_inner();
+        let slug_rules = pathname_rules
+            .next()
+            .unwrap()
+            .into_inner();
+        for rule in slug_rules {
+            match rule.as_rule() {
+                Rule::title => {
+                    let mut chars = rule.as_str().chars();
+                    chars.next_back();
+                    permalink.title = Some(
+                        percent_decode_str(chars.as_str())
+                            .decode_utf8()
+                            .unwrap()
+                            .to_string()
+                    );
+                },
+                Rule::id => {
+                    permalink.id = rule.as_str().to_string();
+                },
+                _ => {},
+            }
+        }
 
-        permalink.title = slug_rules.next().map(|rule| {
-            let mut chars = rule.as_str().chars();
-            chars.next_back();
-            percent_decode_str(chars.as_str()).decode_utf8().unwrap().to_string()
-        });
 
-        permalink.id = slug_rules.next().unwrap().as_str().to_string();
+        println!("test {}", permalink);
 
-        permalink.data = pathname_rules.next().map(|rule| rule.as_str().to_string());
+        permalink.data = pathname_rules.next()
+            .map(|rule| rule.as_str().to_string());
 
         Ok(permalink)
     }
@@ -237,15 +314,40 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_valid_permalink() {
-        let permalink = parse("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/".to_string());
-        assert!(permalink.is_ok());
-
-        let permalink = permalink.unwrap();
+    fn test_parse_valid_permalink() {
+        let permalink = parse("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/".to_string()).unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
         assert_eq!(permalink.language, WellKnownLanguage::KO);
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, Some("당근마켓-대한민국-1등-동네-앱".to_string()));
         assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
+    fn test_parse_valid_permalink_without_title() {
+        let permalink = parse("https://www.daangn.com/kr/app/id1018769995/".to_string()).unwrap();
+        assert_eq!(permalink.country, WellKnownCountry::KR);
+        assert_eq!(permalink.language, WellKnownLanguage::KO);
+        assert_eq!(permalink.service_type, "app".to_string());
+        assert_eq!(permalink.title, None);
+        assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
+    fn test_normalize() {
+        let permalink = parse("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/".to_string()).unwrap();
+        assert_eq!(
+            normalize(permalink),
+            "https://www.karrotmarket.com/kr/app/id1018769995/".to_string(),
+        );
+    }
+
+    #[test]
+    fn test_canonicalize() {
+        let permalink = parse("https://www.daangn.com/kr/app/id1018769995/".to_string()).unwrap();
+        assert_eq!(
+            canonicalize(permalink, "당근마켓-대한민국-1등-동네-앱".to_string()),
+            "https://www.daangn.com/kr/app/%EB%8B%B9%EA%B7%BC%EB%A7%88%EC%BC%93-%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD-1%EB%93%B1-%EB%8F%99%EB%84%A4-%EC%95%B1-id1018769995/".to_string(),
+        );
     }
 }
