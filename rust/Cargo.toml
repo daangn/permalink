@@ -1,0 +1,22 @@
+[package]
+name = "permalink"
+version = "0.1.0"
+publish = false
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+name = "permalink"
+
+[dependencies]
+lazy_static = "1.4.0"
+percent-encoding = "2.2"
+pest = "2.0"
+pest_derive = "2.0"
+thiserror = "1.0"
+unicode-normalization = "0.1.20"
+uniffi = { version = "0.23.0" }
+url = "2.3"
+
+[build-dependencies]
+uniffi = { version = "0.23.0", features = [ "build" ] }

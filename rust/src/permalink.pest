@@ -1,0 +1,22 @@
+pathname = {
+  "/"
+  ~ country
+  ~ serviceType
+  ~ slug
+  ~ data?
+}
+
+country = @{ ASCII_ALPHA_LOWER{2} ~ "/" }
+
+serviceType = @{ (ASCII_ALPHA_LOWER | "-"){2,} ~ "/" }
+
+slug = { title? ~ id ~ "/"? }
+
+title = @{ (titlePart+ ~ "-")+ }
+titlePart = _{ (ASCII_ALPHANUMERIC | pctEncoded)+ }
+
+id = @{ ASCII_ALPHANUMERIC+ }
+
+data = @{ (ASCII_ALPHANUMERIC | "-" | "_" )+ ~ "/"? }
+
+pctEncoded = _{ "%" ~ (ASCII_ALPHA_UPPER | ASCII_DIGIT){2} }
