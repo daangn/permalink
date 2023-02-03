@@ -13,7 +13,7 @@ uniffi::include_scaffolding!("permalink");
 #[grammar = "permalink.pest"]
 struct PathnameParser;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum PermalinkError {
     #[error("invalid url")]
     InvalidUrl(url::ParseError),
@@ -330,6 +330,24 @@ mod tests {
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, None);
         assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
+    fn test_parse_invalid_url() {
+        let result = parse("invalid/kr/app/id1018769995/".to_string());
+        assert!(matches!(result, Err(PermalinkError::InvalidUrl(_))));
+    }
+
+    #[test]
+    fn test_parse_invalid_permalink() {
+        let result = parse("https://apps.apple.com/kr/app/%EB%8B%B9%EA%B7%BC%EB%A7%88%EC%BC%93/id1018769995".to_string());
+        assert!(matches!(result, Err(PermalinkError::InvalidPermalink(_))));
+    }
+
+    #[test]
+    fn test_parse_unknown_country() {
+        let result = parse("https://www.daangn.com/xx/app/id1018769995/".to_string());
+        assert_eq!(result, Err(PermalinkError::UnknownCountry("xx".to_string())));
     }
 
     #[test]
