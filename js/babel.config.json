@@ -1,7 +1,0 @@
-{
-  "plugins": [
-    ["reghex/babel", {
-      "codegen": true
-    }]
-  ]
-}

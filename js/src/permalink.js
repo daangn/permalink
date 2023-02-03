@@ -1,5 +1,5 @@
 import slugify from 'cjk-slug';
-import { parsePathname } from './pathname.mjs';
+import { parsePathname } from './pathname.js';
 
 const wellKnownOriginToCountry = {
   'https://daangn.com': 'KR',

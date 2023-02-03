@@ -1,6 +1,6 @@
 import { test } from 'zora';
 
-import { parse, normalize, canonicalize } from './src/index.mjs';
+import { parse, normalize, canonicalize } from './src/index.js';
 
 const wellKnownOriginToCountry = {
   'https://daangn.com': 'KR',
