@@ -6,9 +6,9 @@ pathname = {
   (data ~ "/")?
 }
 
-country = @{ ASCII_ALPHA_LOWER{2} }
+country = @{ ASCII_ALPHA{2} }
 
-service_type = @{ (ASCII_ALPHA_LOWER | "-"){2,} }
+service_type = @{ (ASCII_ALPHA_LOWER | "-"){3,} }
 
 slug = { title? ~ id }
 

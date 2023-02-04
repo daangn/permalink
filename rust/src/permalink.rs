@@ -36,7 +36,7 @@ impl From<pest::error::Error<Rule>> for PermalinkError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Permalink {
     pub country: WellKnownCountry,
-    pub language: WellKnownLanguage,
+    pub language: String,
     pub service_type: String,
     pub title: Option<String>,
     pub id: String,
@@ -60,7 +60,13 @@ impl Permalink {
             .next()
             .unwrap()
             .as_str();
-        permalink.country = WellKnownCountry::from_str(country)?;
+        if let Some(country) = well_known_country_from_origin(url.origin().ascii_serialization()) {
+            permalink.country = country;
+        } else {
+            permalink.country = WellKnownCountry::from_str(country)?;
+        }
+
+        permalink.language = language_from_well_known_country(permalink.country);
 
         let service_type = pathname_rules
             .next()
@@ -90,9 +96,6 @@ impl Permalink {
                 _ => {},
             }
         }
-
-
-        println!("test {}", permalink);
 
         permalink.data = pathname_rules.next()
             .map(|rule| rule.as_str().to_string());
@@ -162,7 +165,7 @@ impl Default for Permalink {
     fn default() -> Self {
         Self {
             country: WellKnownCountry::KR,
-            language: WellKnownLanguage::KO,
+            language: "ko".to_string(),
             service_type: "about".to_string(),
             title: None,
             id: "blank".to_string(),
@@ -221,11 +224,11 @@ impl FromStr for WellKnownCountry {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
-            "ca" => Ok(Self::CA),
-            "jp" => Ok(Self::JP),
-            "kr" => Ok(Self::KR),
-            "uk" => Ok(Self::UK),
-            "us" => Ok(Self::US),
+            "ca" | "CA" | "cA" | "Ca" => Ok(Self::CA),
+            "jp" | "JP" | "jP" | "Jp" => Ok(Self::JP),
+            "kr" | "KR" | "kR" | "Kr"  => Ok(Self::KR),
+            "uk" | "UK" | "uK" | "Uk" => Ok(Self::UK),
+            "us" | "US" | "uS" | "Us" => Ok(Self::US),
             _ => Err(Self::Err::UnknownCountry(value.to_string())),
         }
     }
@@ -243,30 +246,7 @@ impl Display for WellKnownCountry {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum WellKnownLanguage {
-    EN,
-    JA,
-    KO,
-}
-
-impl Display for WellKnownLanguage {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt.write_str(match self {
-            Self::EN => "en",
-            Self::JA => "ja",
-            Self::KO => "ko",
-        })
-    }
-}
-
-impl From<WellKnownCountry> for WellKnownLanguage {
-    fn from(country: WellKnownCountry) -> Self {
-        well_known_language_from_country(country)
-    }
-}
-
-pub fn well_known_country_from_origin(origin: String) -> Option<WellKnownCountry> {
+fn well_known_country_from_origin(origin: String) -> Option<WellKnownCountry> {
     match normalize_origin(origin).as_str() {
         "https://www.daangn.com" => Some(WellKnownCountry::KR),
         "https://www.karrotmarket.com" => None,
@@ -279,7 +259,7 @@ pub fn well_known_country_from_origin(origin: String) -> Option<WellKnownCountry
     }
 }
 
-pub fn well_known_origin_from_country(country: WellKnownCountry) -> String {
+fn well_known_origin_from_country(country: WellKnownCountry) -> String {
     match country {
         WellKnownCountry::CA => "https://ca.karrotmarket.com".to_string(),
         WellKnownCountry::JP => "https://jp.karrotmarket.com".to_string(),
@@ -289,13 +269,13 @@ pub fn well_known_origin_from_country(country: WellKnownCountry) -> String {
     }
 }
 
-pub fn well_known_language_from_country(country: WellKnownCountry) -> WellKnownLanguage {
+fn language_from_well_known_country(country: WellKnownCountry) -> String {
     match country {
-        WellKnownCountry::CA => WellKnownLanguage::EN,
-        WellKnownCountry::JP => WellKnownLanguage::JA,
-        WellKnownCountry::KR => WellKnownLanguage::KO,
-        WellKnownCountry::UK => WellKnownLanguage::EN,
-        WellKnownCountry::US => WellKnownLanguage::EN,
+        WellKnownCountry::CA => "en".to_string(),
+        WellKnownCountry::JP => "ja".to_string(),
+        WellKnownCountry::KR => "ko".to_string(),
+        WellKnownCountry::UK => "en".to_string(),
+        WellKnownCountry::US => "en".to_string(),
     }
 }
 
@@ -315,7 +295,7 @@ mod tests {
     fn test_parse_valid_permalink() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, WellKnownLanguage::KO);
+        assert_eq!(permalink.language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, Some("당근마켓-대한민국-1등-동네-앱".to_string()));
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -325,7 +305,7 @@ mod tests {
     fn test_parse_valid_permalink_without_title() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, WellKnownLanguage::KO);
+        assert_eq!(permalink.language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, None);
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -344,8 +324,28 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_well_known_host() {
+        let permalink = Permalink::parse_str("https://www.daangn.com/ca/app/id1018769995/").unwrap();
+        assert_eq!(permalink.country, WellKnownCountry::KR);
+        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.service_type, "app".to_string());
+        assert_eq!(permalink.title, None);
+        assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
+    fn test_parse_country_case_insensitive() {
+        let permalink = Permalink::parse_str("https://www.daangn.com/KR/app/id1018769995/").unwrap();
+        assert_eq!(permalink.country, WellKnownCountry::KR);
+        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.service_type, "app".to_string());
+        assert_eq!(permalink.title, None);
+        assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
     fn test_parse_unknown_country() {
-        let result = Permalink::parse_str("https://www.daangn.com/xx/app/id1018769995/");
+        let result = Permalink::parse_str("http://localhost/xx/app/id1018769995/");
         assert_eq!(result, Err(PermalinkError::UnknownCountry("xx".to_string())));
     }
 

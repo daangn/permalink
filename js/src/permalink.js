@@ -1,35 +1,35 @@
 import slugify from 'cjk-slug';
 import { parsePathname } from './pathname.js';
 
-const wellKnownOriginToCountry = {
-  'https://daangn.com': 'KR',
+let wellKnownOriginToCountry = {
+  'https://daangn.com': 'kr',
   'https://karrotmarket.com': undefined,
-  'https://www.daangn.com': 'KR',
+  'https://www.daangn.com': 'kr',
   'https://www.karrotmarket.com': undefined,
-  'https://ca.karrotmarket.com': 'CA',
-  'https://jp.karrotmarket.com': 'JP',
-  'https://uk.karrotmarket.com': 'UK',
-  'https://us.karrotmarket.com': 'US',
-  'https://kr.karrotmarket.com': 'KR',
+  'https://ca.karrotmarket.com': 'ca',
+  'https://jp.karrotmarket.com': 'jp',
+  'https://uk.karrotmarket.com': 'uk',
+  'https://us.karrotmarket.com': 'us',
+  'https://kr.karrotmarket.com': 'kr',
 };
 
-const wellKnownCountryToOrigin = {
-  'CA': 'https://ca.karrotmarket.com',
-  'JP': 'https://jp.karrotmarket.com',
-  'UK': 'https://uk.karrotmarket.com',
-  'US': 'https://us.karrotmarket.com',
-  'KR': 'https://www.daangn.com',
+let wellKnownCountryToOrigin = {
+  'ca': 'https://ca.karrotmarket.com',
+  'jp': 'https://jp.karrotmarket.com',
+  'uk': 'https://uk.karrotmarket.com',
+  'us': 'https://us.karrotmarket.com',
+  'kr': 'https://www.daangn.com',
 };
 
-const wellKnownCountryToLanguage = {
-  'CA': 'en',
-  'JP': 'ja',
-  'KR': 'ko',
-  'UK': 'en',
-  'US': 'en',
+let wellKnownCountryToLanguage = {
+  'ca': 'en',
+  'jp': 'ja',
+  'kr': 'ko',
+  'uk': 'en',
+  'us': 'en',
 };
 
-const aliases = {
+let aliases = {
   'https://daangn.com': 'https://www.daangn.com',
   'https://karrotmarket.com': 'https://www.karrotmarket.com',
 };
@@ -39,46 +39,41 @@ function ensureTrailingSlash(pathLike) {
 }
 
 export function parse(urlLike) {
-  const url = new URL(urlLike);
+  let url = new URL(urlLike);
   url.pathname = ensureTrailingSlash(url.pathname);
 
-  const { href, origin, pathname } = url;
-
-  const {
-    country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]],
-    lang = wellKnownCountryToLanguage[country],
-    contentType,
+  let { origin, pathname } = url;
+  let {
+    country,
+    serviceType,
     title = null,
     id,
     data = null,
   } = parsePathname(pathname);
 
-  if (!country) {
-    throw new TypeError('country must be provided in the permalink');
-  }
+  country = country.toLowerCase();
+  country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]] || country;
 
+  let lang = wellKnownCountryToLanguage[country];
   if (!lang) {
-    throw new TypeError('lang must be provided in the permalink');
+    throw new TypeError(`lang cannot be inferred since the country ${country} is unknown`);
   }
 
   return {
-    href,
-    origin,
-    pathname,
     country,
     lang,
-    contentType,
+    serviceType,
     title,
     id,
     data,
   };
 };
 
-export function normalize({ country, contentType, id }) {
-  const components = [
+export function normalize({ country, serviceType, id }) {
+  let components = [
     'https://www.karrotmarket.com',
     country,
-    contentType,
+    serviceType,
     id,
   ];
 
@@ -94,14 +89,16 @@ export function canonicalize(permalink, title) {
     throw new TypeError('You muse bind the title property explicitly, try again with canonicalize(permalink, permalink.title)');
   }
 
-  const { country, lang, contentType, id } = permalink;
-  const origin = wellKnownCountryToOrigin[country];
-  const canonicalOrigin = aliases[origin] || origin;
+  let { country, serviceType, id } = permalink;
+  country = country.toLowerCase();
 
-  const components = [
+  let origin = wellKnownCountryToOrigin[country];
+  let canonicalOrigin = aliases[origin] || origin;
+
+  let components = [
     canonicalOrigin,
-    lang || wellKnownCountryToLanguage[country],
-    contentType,
+    country,
+    serviceType,
     encodeURIComponent(slugify(`${title || ''}-${id}`)),
   ];
 

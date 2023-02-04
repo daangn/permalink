@@ -1,6 +1,6 @@
 # Web Content Permalink Specification
 
-- Version: 2021-08-06
+- Version: 2023-02-06
 - Status: Draft
 
 ## Introduction
@@ -11,6 +11,11 @@
 
 문서에서 사용된 MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL 키워드는 [RFC 2119]의 정의를 따릅니다.
 
+## Definitions
+
+- 웹 컨텐츠: 서비스에서 월드와이드웹으로 배포한 고유 엔티티로 사용자에게 유용한 정보를 포함하며 사이트의 구성과 상관 없이 영구적으로 보존됩니다.
+- 퍼머링크: 웹 컨텐츠를 가르키는 고유 URL 입니다.
+
 ## Pathname
 
 퍼머링크의 형식은 전체 URL이 아닌 경로이름을 사용해서 정의합니다. (MUST)
@@ -18,21 +23,22 @@
 ### Format
 
 ```abnf
-pathname      = ["/" country]                      ; Optional if base URL is well-known
-                ["/" lang]                         ; Optional if base country is well-known
-                "/" content-type
+pathname      = country
+                "/" service-type
                 "/" slug
                 ["/" data]                         ; Alternative to query string (client-only)
                 "/"                                ; Should be ended with a trailing slash
                 
-country       = 2UPALPHA                           ; A - Z, ISO 3166-1 (alpha 2) code
-lang          = 2LOALPHA                           ; a - z, ISO 639-1 code
+country       = 2ALPHA                             ; ISO 3166-1 (alpha 2) code (case-insensitive)
 
-content-type  = 2*(LOALPHA / "-")
+service-type  = 3*(LOALPHA / "-")
+
 slug          = [title "-"] id                     ; SEO-friendly identifier for the content
 title         = 1*uriencoded *("-" (1*uriencoded)) ; content title
 id            = 8*(alphanum / "_")                 ; content identifier
+
 data          = 1*alphanum                         ; lz-based compressed data string for client-only
+
 uriencoded    = alphanum / pct-encoded
 pct-encoded   = "%" HEXDIG HEXDIG                  ; pct-encoded refers to rfc3986
 alphanum      = ALPHA / DIGIT                      ; letters and numbers
@@ -40,31 +46,37 @@ alphanum      = ALPHA / DIGIT                      ; letters and numbers
 
 주어진 속성이 모두 일치하는 경우 같은 퍼머링크로 취급됩니다. (MUST) 예를 들면 아래 퍼머링크들은 모두 같은 것으로 취급합니다.
 
-- `http://localhost:8080/KR/ko/my-article-1234/?var=foo`
-- `https://www.daangn.com/KR/ko/my-article-1234/?var=bar`
-- `https://karrot.app/KR/ko/my-article-1234/#hash`
+- `http://localhost:8080/kr/my-article-1234/?var=foo`
+- `https://www.daangn.com/kr/my-article-1234/?var=bar`
+- `https://karrot.app/kr/my-article-1234/#hash`
 
 #### Country
 
 `country` 속성은 [ISO 3166-1] (alpha-2)로 정의합니다.
 
+반드시 경로에 포함되어야 합니다. (MUST)
+
 #### Language
 
 `lang` 속성은 [ISO 639-1]로 정의합니다.
 
-#### Content Type
+값이 경로에 포함되지 않고 항상 `country` 로 부터 추론됩니다. (“Well-known countries” 섹션 참고)
 
-`content-type` 속성은 서비스에 대한 고유 식별자입니다.
+#### Service Type
+
+`service-type` 속성은 서비스에 대한 고유 식별자입니다.
+
+반드시 경로에 포함되어야 합니다. (MUST)
 
 #### Content Identifier
 
-`id` 속성은 컨텐츠 퍼머링크의 고유성을 부여하는 목적으로만 사용합니다.
+`id` 속성은 컨텐츠 퍼머링크의 고유성을 부여하는 목적으로 사용합니다.
 
-다른 구성 맥락(서비스, DB, 클러스터, 기타 인프라 등)과 관계없이 월드와이드웹에 노출되는 것을 기점으로 영구적입니다. (RECOMMENDED)
+컨텐츠가 월드와이드웹에 노출되는 것을 기점으로 영구적으로 보존합니다. (SHOULD)
 
-DB 레코드의 고유성과 연관짓지 않아야 합니다. (RECOMMENDED)
+다른 구성 맥락(서비스, DB, 클러스터, 기타 인프라 등)과 연관짓지 않아야 합니다. (SHOULD) 구성 맥락이 변경되는 경우, 컨텐츠 보존이 어려워질 수 있습니다.
 
-물리적인 시간 외의 다른 유추가능한 정보와 연관짓지 않아야 합니다. (RECOMMENDED)
+유추가능한 정보나 특정 알고리듬과에 의존하지 않아야 합니다. (SHOULD) ID를 식별하는데 특정 알고리듬을 의존하는 경우, 구현 변경에 의해 컨텐츠 보존이 어려워질 수 있습니다.
 
 #### Content Title
 
@@ -118,19 +130,11 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ##### Data Codec
 
-데이터는 압축된 JSON 메시지(또는 그와 동등한 표현을 가진 객체)입니다.
+데이터는 문자열 형식으로 압축된 JSON 메시지(또는 그와 동등한 표현을 가진 객체)입니다. 이 때 사용된 직렬화 형식은 반드시 URL-safe 해야 합니다. (MUST)
 
-코덱으로 [MessagePack] + Base58를 사용합니다 (SHOULD)
+진입점에 `data` 속성이 주어지는 경우 반드시 클라이언트까지 유실없이 전달되어야 합니다. (MUST)
 
-- 인코딩: 주어진 JSON 데이터를 MessagePack 바이너리로 인코딩합니다. MessagePack 바이너리를 Base58로 인코딩합니다.
-- 디코딩: 주어진 Base58 문자열을 바이너리로 디코딩 합니다. 출력한 바이너리를 MessagePack 코덱으로 JSON 객체로 복원합니다.
-
-##### Base58 문자 테이블
-
-다음 문자 테이블을 사용합니다. (SHOULD)
-
-`123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz`
-(Bitcoin 프로젝트에서 사용하는 문자 테이블과 동일)
+하지만 세부적인 내용이나 형식은 보장되지 않기 때문에 반드시 있을 것을 전제하지 않고 옵셔널한 값으로 취급해야 합니다. (MUST)
 
 ### Trailing Slash
 
@@ -139,11 +143,7 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 - `https://www.daangn.com/test-1234/?var=foo` -> Valid
 - `https://www.daangn.com/test-1234?bar=foo` -> Invalid
 
-경로를 해석할 때 가능한 슬래시 문자로 종료되도록 정규화 합니다. (SHOULD)
-
-사용자가 슬래시로 끝나지 않는 경로로 요청하는 경우 슬래시 경로로 리다이렉션(HTTP 301) 합니다. (SHOULD)
-
-정적 파일을 기반 사이트 운영 시 (모든 경로에 `index.html` 파일이 존재한다고 가정) 웹 서버와 브라우저의 컨텐츠 협상 알고리듬에 의해 자동으로 달성됩니다.
+경로를 해석할 때 슬래시 문자로 종료되도록 정규화 합니다. (RECOMMENDED)
 
 <details>
   <summary>참조</summary>
@@ -168,7 +168,9 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ## Context & Well-knowns
 
-퍼머링크는 여러 맥락을 포함하고 있습니다. 이 중 국가와 지역은 다른 주변 맥락에 따라 암묵적으로 해석될 수 있습니다.
+퍼머링크에 포함된 여러 속성은 정적으로 해석될 수 있습니다.
+
+이 중 국가와 지역은 다른 주변 맥락에 따라 암묵적으로 해석될 수 있습니다.
 
 ### Origin aliases
 
@@ -179,12 +181,10 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ### Well-known hosts
 
-잘 알려진 (Well-known) 호스트가 사용되어 추론이 가능한 경우 `country` 속성은 생략할 수 있습니다.
+`country` 속성 값은 항상 퍼머링크에 포함됩니다. 하지만 주어진 호스트가 잘 알려진 호스트인 경우 주어진 `country` 속성 값보다 알려진 값을 우선합니다.
 
-나머지 경우는 `country` 속성이 퍼머링크에 포함되어야 합니다. (SHOULD)
-
-- `https://www.karrotmarket.com` (Unknown)
 - `https://www.daangn.com` (`KR`)
+- `https://kr.karrotmarket.com` (`KR`)
 - `https://ca.karrotmarket.com` (`CA`)
 - `https://uk.karrotmarket.com` (`UK`)
 - `https://us.karrotmarket.com` (`US`)
@@ -192,9 +192,7 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ### Well-known countries
 
-잘 알려진 (Well-known) `country` 속성이 맥락에 포함된 경우 `lang` 속성을 생략할 수 있습니다.
-
-나머지 경우는 `lang` 속성이 퍼머링크에 포함되거나, 프로그램에서 제공되어야 합니다. (SHOULD)
+`country` 속성에 따라 기본 `lang` 속성이 기본 제공됩니다.
 
 - `KR` (`ko`)
 - `CA` (`en`)
@@ -208,15 +206,14 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ### Property Stability
 
-안정된(Stable) 속성
+안정적인(Stable) 속성
 
 - `country`
-- `content-type`
+- `service-type`
 - `id`
 
 불안정한(Unstable) 속성
 
-- `lang`: 사용자의 브라우징 맥락에 의존적입니다.
 - `title`: 방문자를 위해서만 제공되며 서비스에서 일관성을 보장하지 않습니다.
 - `data`: 클라이언트 애플리케이션을 위해서 제공되며 서비스에서 일관성을 보장하지 않습니다.
 
@@ -227,41 +224,36 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 퍼머링크를 정규화하는 절차는 다음과 같습니다.
 
 1. 호스트를 `https://www.karrotmarket.com` 으로 변경합니다.
-2. 안정된 속성을 모두 포함합니다.
+2. 안정적인 속성을 모두 포함합니다.
 3. 불안정한 속성을 모두 제거합니다.
 
 ### Uniqueness
 
-정규화된 퍼머링크는 고유한 컨텐츠를 가르켜야 합니다. (MUST)
+정규화된 퍼머링크는 영구적으로 고유한 컨텐츠를 가르켜야 합니다. (MUST)
 
 더 세부적인 맥락에서 고유성은 “안정된 속성”들만 사용해서 판별하게 됩니다.
 동일한 `id`, `content-type`, `country` 조합이 가르키는 컨텐츠는 반드시 고유해야합니다.
 
 세부적인 고유성 수준은 서비스에서 결정합니다.
 
-- 사실, `id`만으로 찾는 컨텐츠를 특정할 수 있습니다.
-- 사실, `id`와 `content-type`의 조합으로 컨텐츠를 특정할 수 있습니다.
-- `id`, `content-type`, `country`의 조합으로 컨텐츠를 특정할 수 있습니다.
+- `id`만으로 찾는 컨텐츠를 특정할 수 있는 경우.
+- `id`와 `service-type`의 조합으로 컨텐츠를 특정할 수 있는 경우.
+- `id`, `service-type`, `country`의 조합으로 컨텐츠를 특정할 수 있는 경우.
 
-맥락을 직접 다루는 것 보다 퍼머링크 자체를 불변 참조값으로 다루는 것을 더 권장합니다.
+속성을 직접 해석하는 것 보다 퍼머링크 자체를 불변 참조값으로 다루는 것을 권장합니다.
 
 ### Canonicalization
 
-하나의 컨텐츠가 여러 퍼머링크를 가질 수 있습니다.
-
-- 타이틀을 포함하지 않는 경우
-- 언어가 다른 경우
-- 데이터가 다른 경우
+불안정한 속성들로 인해 하나의 컨텐츠가 여러 퍼머링크를 가질 수 있습니다.
 
 여러 퍼머링크들 중 하나가 컨텐츠를 대표하는 URL(Canonical URL)로 사용됩니다.
 
 #### 여러 퍼머링크 중 대표 URL을 선택하는 방법
 
-- `https` 프로토콜을 사용합니다. (MUST)
-- `country` 속성을 생략할 수 있는 경우, 생략된 퍼머링크가 더 높은 우선순위를 갖습니다. (“Context & Well-known URL” 섹션 참고)
-- `lang` 속성이 명시된 경우 더 높은 우선순위를 갖습니다. (“Context & Well-known URL” 섹션 참고)
-- `data` 속성은 대표 URL에 포함하지 않습니다. (“Link Data” 섹션 참고)
-- `title` 속성은 대표 URL에 포함합니다.
+- `https` 프로토콜을 사용합니다.
+- 잘 알려진 호스트를 사용합니다. (“Well-known hosts” 섹션 참고)
+- `data` 속성을 대표 URL에 포함하지 않습니다. (“Link Data” 섹션 참고)
+- `title` 속성을 대표 URL에 포함합니다.
 - 가장 최신의 `title` 속성 값을 포함한 퍼머링크가 더 높은 우선순위를 갖습니다.
 
 사용자가 퍼머링크로 요청 했을 때 서비스는 응답(웹 페이지 등)에 대표 URL에 대한 링크를 포함하거나 HTTP 301 응답을 통해 사용자를 대표 URL로 리다이렉트 해야 합니다. (SHOULD)
@@ -283,9 +275,9 @@ HTTP 301 응답은 중복된 URL이 더 이상 사용되지 않는 것을 의미
 
 한 컨텐츠는 다양한 언어 맥락에서 제공될 수 있습니다. 또는 컨텐츠 내용이 여러 언어로 제공되지 않더라도 컨텐츠를 포함하는 UI 요소가 여러 언어로 제공될 수 있습니다.
 
-사용자의 언어 맥락을 보존하기 위해 외부에 공유되는 퍼머링크와 대표 URL에 `lang` 속성을 포함합니다. (SHOULD)
+다만 당근마켓은 지역 중심의 커뮤니티 서비스로, 당근마켓에서 제공하는 웹 컨텐츠는 항상 지역 중심적인 맥락을 가지고 있습니다. 그에 따라 컨텐츠의 내용도 해당 지역에서 선호되는 언어로 작성되어 있을 가능성이 높습니다.
 
-대표 URL은 컨텐츠가 실제로 사용하는 언어를 우선해서 선택합니다 (RECOMMENDED)
+당근마켓의 퍼머링크 표준은 컨텐츠를 위한 것으로 언어 맥락을 의도적으로 포함하지 않으며, 컨텐츠와 무관한 UI 설정 등은 앱이나 브라우저 등 사용자 에이전트의 설정을 따릅니다.
 
 ## References
 

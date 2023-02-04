@@ -21,15 +21,10 @@ const pctEncoded = match('ptc_encoded')`
 
 // ISO 3166-1 Country Codes
 const country = match('country', zip)`
-  ${/[A-Z]{2}/} :${slash}
+  ${/[a-zA-Z]{2}/} :${slash}
 `;
 
-// ISO 639-1
-const lang = match('lang', zip)`
-  ${/[a-z]{2}/} :${slash}
-`;
-
-const contentType = match('contentType', zip)`
+const serviceType = match('serviceType', zip)`
   ${/[a-z]{2,}/} :${slash}
 `;
 
@@ -42,7 +37,7 @@ const title = match('title', x => ({ title: decodeURIComponent(x.join('-')) }))`
 `;
 
 const id = match('id', zip)`
-  ${/[a-zA-Z\d]{8,13}/}
+  ${/[a-zA-Z\d]{8,}/}
 `;
 
 const slug = match('slug', merge)`
@@ -55,9 +50,8 @@ const data = match('data', zip)`
 
 const pathname = match('pathname', merge)`
   :${slash}
-  ${country}?
-  ${lang}?
-  ${contentType}
+  ${country}
+  ${serviceType}
   ${slug}
   ${data}?
 `;
