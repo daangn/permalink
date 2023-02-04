@@ -1,22 +1,22 @@
 pathname = {
-  "/"
-  ~ country
-  ~ serviceType
-  ~ slug
-  ~ data?
+  "/" ~
+  (country ~ "/") ~
+  (service_type ~ "/") ~
+  (slug ~ "/") ~
+  (data ~ "/")?
 }
 
-country = @{ ASCII_ALPHA_LOWER{2} ~ "/" }
+country = @{ ASCII_ALPHA_LOWER{2} }
 
-serviceType = @{ (ASCII_ALPHA_LOWER | "-"){2,} ~ "/" }
+service_type = @{ (ASCII_ALPHA_LOWER | "-"){2,} }
 
-slug = { title? ~ id ~ "/"? }
+slug = { title? ~ id }
 
-title = @{ (titlePart+ ~ "-")+ }
-titlePart = _{ (ASCII_ALPHANUMERIC | pctEncoded)+ }
+title = @{ (title_part+ ~ "-")+ }
+title_part = _{ (ASCII_ALPHANUMERIC | pct_encoded)+ }
 
 id = @{ ASCII_ALPHANUMERIC+ }
 
-data = @{ (ASCII_ALPHANUMERIC | "-" | "_" )+ ~ "/"? }
+data = @{ (ASCII_ALPHANUMERIC | "-" | "_" )+ }
 
-pctEncoded = _{ "%" ~ (ASCII_ALPHA_UPPER | ASCII_DIGIT){2} }
+pct_encoded = _{ "%" ~ (ASCII_ALPHA_UPPER | ASCII_DIGIT){2} }
