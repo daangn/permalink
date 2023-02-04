@@ -1,12 +1,8 @@
 [package]
-name = "permalink"
+name = "karrot-permalink"
 version = "0.1.0"
 publish = false
 edition = "2021"
-
-[lib]
-crate-type = ["cdylib"]
-name = "permalink"
 
 [dependencies]
 lazy_static = "1.4.0"
@@ -16,8 +12,4 @@ pest_derive = "2.0"
 regex = "1"
 thiserror = "1.0"
 unicode-normalization = "0.1.22"
-uniffi = { version = "0.23.0" }
 url = "2.3"
-
-[build-dependencies]
-uniffi = { version = "0.23.0", features = [ "build" ] }
