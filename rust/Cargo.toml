@@ -1,7 +1,9 @@
 [package]
 name = "karrot-permalink"
+description = "Permalink URL parser for Karrot's web contents"
+repository = "https://github.com/daangn/permalink"
 version = "0.1.0"
-publish = false
+license = "MIT"
 edition = "2021"
 
 [dependencies]
