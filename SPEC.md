@@ -138,12 +138,10 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ### Trailing Slash
 
-경로는 슬래시 문자(`/`)로 종료되어야 합니다 (SHOULD)
+경로는 슬래시 문자(`/`)로 종료되어야 합니다 (RECOMMENDED) 경로를 해석할 때 항상 슬래시 문자로 종료되도록 정규화 합니다.
 
-- `https://www.daangn.com/test-1234/?var=foo` -> Valid
-- `https://www.daangn.com/test-1234?bar=foo` -> Invalid
+예시: `https://www.daangn.com/test-1234/?var=foo` -> `https://www.daangn.com/test-1234?bar=foo`
 
-경로를 해석할 때 슬래시 문자로 종료되도록 정규화 합니다. (RECOMMENDED)
 
 <details>
   <summary>참조</summary>

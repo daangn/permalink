@@ -2,8 +2,8 @@ pathname = {
   "/" ~
   (country ~ "/") ~
   (service_type ~ "/") ~
-  (slug ~ "/") ~
-  (data ~ "/")?
+  (slug ~ "/"?) ~
+  (data ~ "/"?)?
 }
 
 country = @{ ASCII_ALPHA{2} }

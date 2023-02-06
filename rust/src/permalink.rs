@@ -302,6 +302,16 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_valid_permalink_without_trailing_slash() {
+        let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995").unwrap();
+        assert_eq!(permalink.country, WellKnownCountry::KR);
+        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.service_type, "app".to_string());
+        assert_eq!(permalink.title, Some("당근마켓-대한민국-1등-동네-앱".to_string()));
+        assert_eq!(permalink.id, "id1018769995".to_string());
+    }
+
+    #[test]
     fn test_parse_valid_permalink_without_title() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
