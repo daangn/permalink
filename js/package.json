@@ -1,6 +1,6 @@
 {
   "name": "@karrotmarket/permalink",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./index.d.ts",
@@ -22,6 +22,14 @@
     "test": "node test.mjs | tap-diff",
     "test:coverage": "c8 yarn test"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "./index.d.ts",
+    "src",
+    "lib"
+  ],
   "dependencies": {
     "cjk-slug": "^0.3.0",
     "reghex": "^3.0.2"
