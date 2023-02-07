@@ -14,22 +14,22 @@ struct PathnameParser;
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum PermalinkError {
     #[error("invalid url")]
-    InvalidUrl(url::ParseError),
+    InvalidUrl(Box<url::ParseError>),
     #[error("invalid permalink")]
-    InvalidPermalink(pest::error::Error<Rule>),
+    InvalidPermalink(Box<pest::error::Error<Rule>>),
     #[error("unknown country code `{0}`")]
     UnknownCountry(String),
 }
 
 impl From<url::ParseError> for PermalinkError {
     fn from(err: url::ParseError) -> Self {
-        Self::InvalidUrl(err)
+        Self::InvalidUrl(Box::new(err))
     }
 }
 
 impl From<pest::error::Error<Rule>> for PermalinkError {
     fn from(err: pest::error::Error<Rule>) -> Self {
-        Self::InvalidPermalink(err)
+        Self::InvalidPermalink(Box::new(err))
     }
 }
 
@@ -103,7 +103,7 @@ impl Permalink {
         Ok(permalink)
     }
 
-    pub fn normalize(self: &Self) -> String {
+    pub fn normalize(&self) -> String {
         format!(
             "{}/{}/{}/{}/",
             "https://www.karrotmarket.com",
@@ -113,7 +113,7 @@ impl Permalink {
         )
     }
 
-    pub fn canonicalize(self: &Self, title: &str) -> String {
+    pub fn canonicalize(&self, title: &str) -> String {
         const NON_URL_SAFE: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
             .add(b' ')
             .add(b'!')
