@@ -21,6 +21,11 @@ const wellKnownCountryToLanguage = {
 };
 
 test('parse', t => {
+  t.throws(
+    () => parse('https://www.daangn.com/kr/'),
+    'invalid permlaink format',
+  );
+
   t.equal(
     parse('https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/'),
     {
@@ -71,6 +76,19 @@ test('parse', t => {
       data: null,
     },
     'country is case-insensitive',
+  );
+
+  t.equal(
+    parse('https://www.daangn.com/kr/business-profiles/%EC%9E%84%EC%9D%80%ED%95%98%ED%91%B8%EB%93%9C-%EC%9D%B8%EC%B2%9C%EC%B0%BD%EA%B3%A0-97109917d5214963a7072732b61562df/'),
+    {
+      country: 'kr',
+      defaultLanguage: 'ko',
+      serviceType: 'business-profiles',
+      title: '임은하푸드-인천창고',
+      id: '97109917d5214963a7072732b61562df',
+      data: null,
+    },
+    'real-world example 1',
   );
 
   for (const [origin, country] of Object.entries(wellKnownOriginToCountry)) {

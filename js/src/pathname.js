@@ -12,10 +12,10 @@ const slash = match('slash')`
 `;
 
 const letters = match('letters')`
-  ${/[a-z\d]/}
+  ${/[a-zA-Z\d]/}
 `;
 
-const pctEncoded = match('ptc_encoded')`
+const pctEncoded = match('pct_encoded')`
   ${/(%[A-F\d]{2})/}
 `;
 
@@ -25,7 +25,7 @@ const country = match('country', zip)`
 `;
 
 const serviceType = match('serviceType', zip)`
-  ${/[a-z]{2,}/} :${slash}
+  ${/[a-z\-]{2,}/} :${slash}
 `;
 
 const titlePart = match('title_part', x => x.join(''))`

@@ -43,13 +43,19 @@ export function parse(urlLike) {
   url.pathname = ensureTrailingSlash(url.pathname);
 
   let { origin, pathname } = url;
+
+  let parseResult = parsePathname(pathname);
+  if (!parseResult) {
+    throw new TypeError('Invalid permalink format');
+  };
+
   let {
     country,
     serviceType,
     title = null,
     id,
     data = null,
-  } = parsePathname(pathname);
+  } = parseResult;
 
   country = country.toLowerCase();
   country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]] || country;
