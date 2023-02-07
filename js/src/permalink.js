@@ -54,14 +54,14 @@ export function parse(urlLike) {
   country = country.toLowerCase();
   country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]] || country;
 
-  let lang = wellKnownCountryToLanguage[country];
-  if (!lang) {
-    throw new TypeError(`lang cannot be inferred since the country ${country} is unknown`);
+  let defaultLanguage = wellKnownCountryToLanguage[country];
+  if (!defaultLanguage) {
+    throw new TypeError(`defaultLanguage cannot be inferred since the country ${country} is unknown`);
   }
 
   return {
     country,
-    lang,
+    defaultLanguage,
     serviceType,
     title,
     id,

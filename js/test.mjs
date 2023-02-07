@@ -25,7 +25,7 @@ test('parse', t => {
     parse('https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/'),
     {
       country: 'kr',
-      lang: 'ko',
+      defaultLanguage: 'ko',
       serviceType: 'app',
       title: '당근마켓-대한민국-1등-동네-앱',
       id: 'id1018769995',
@@ -38,7 +38,7 @@ test('parse', t => {
     parse('https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/2LLSiWAs7A2dbJmq4nC9sCbGK1oTzLwZkwiqmji/'),
     {
       country: 'kr',
-      lang: 'ko',
+      defaultLanguage: 'ko',
       serviceType: 'app',
       title: '당근마켓-대한민국-1등-동네-앱',
       id: 'id1018769995',
@@ -51,7 +51,7 @@ test('parse', t => {
     parse('https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995'),
     {
       country: 'kr',
-      lang: 'ko',
+      defaultLanguage: 'ko',
       serviceType: 'app',
       title: '당근마켓-대한민국-1등-동네-앱',
       id: 'id1018769995',
@@ -64,7 +64,7 @@ test('parse', t => {
     parse('https://www.daangn.com/KR/app/당근마켓-대한민국-1등-동네-앱-id1018769995/'),
     {
       country: 'kr',
-      lang: 'ko',
+      defaultLanguage: 'ko',
       serviceType: 'app',
       title: '당근마켓-대한민국-1등-동네-앱',
       id: 'id1018769995',
@@ -78,7 +78,7 @@ test('parse', t => {
       parse(`${origin}/xx/app/당근마켓-대한민국-1등-동네-앱-id1018769995/`),
       {
         country,
-        lang: wellKnownCountryToLanguage[country],
+        defaultLanguage: wellKnownCountryToLanguage[country],
         serviceType: 'app',
         title: '당근마켓-대한민국-1등-동네-앱',
         id: 'id1018769995',
@@ -93,7 +93,7 @@ test('parse', t => {
       parse(`http://localhost/${country}/app/당근마켓-대한민국-1등-동네-앱-id1018769995/`),
       {
         country,
-        lang,
+        defaultLanguage: lang,
         serviceType: 'app',
         title: '당근마켓-대한민국-1등-동네-앱',
         id: 'id1018769995',
@@ -112,7 +112,7 @@ test('parse', t => {
     parse('https://www.daangn.com/kr/app/id1018769995/'),
     {
       country: 'kr',
-      lang: 'ko',
+      defaultLanguage: 'ko',
       serviceType: 'app',
       title: null,
       id: 'id1018769995',
@@ -131,7 +131,7 @@ test('normalize', t => {
 
   const invalid = {
     country: null,
-    lang: null,
+    defaultLanguage: null,
     serviceType: 'app',
     title: null,
     id: 'id1018769995',
@@ -157,7 +157,7 @@ test('canonicalize', t => {
 
   const invalid = {
     country: null,
-    lang: null,
+    defaultLanguage: null,
     serviceType: 'app',
     title: null,
     id: 'id1018769995',

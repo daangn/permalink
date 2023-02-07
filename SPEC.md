@@ -1,6 +1,6 @@
 # Web Content Permalink Specification
 
-- Version: 2023-02-06
+- Version: 2023-02-07
 - Status: Draft
 
 ## Introduction
@@ -56,11 +56,11 @@ alphanum      = ALPHA / DIGIT                      ; letters and numbers
 
 반드시 경로에 포함되어야 합니다. (MUST)
 
-#### Language
+#### Default Language
 
-`lang` 속성은 [ISO 639-1]로 정의합니다.
+`defaultLanguage` 속성은 [ISO 639-1]로 정의합니다.
 
-값이 경로에 포함되지 않고 항상 `country` 로 부터 추론됩니다. (“Well-known countries” 섹션 참고)
+경로에 값이 포함되지 않고 항상 `country` 로 부터 추론됩니다. (“Well-known countries” 섹션 참고)
 
 #### Service Type
 
@@ -190,7 +190,7 @@ SEO 목적을 위해 컨텐츠의 제목 속성이 퍼머링크에 포함될 수
 
 ### Well-known countries
 
-`country` 속성에 따라 기본 `lang` 속성이 기본 제공됩니다.
+`country` 속성에 따라 `defaultLanguage` 속성이 기본 제공됩니다.
 
 - `KR` (`ko`)
 - `CA` (`en`)

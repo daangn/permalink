@@ -36,7 +36,7 @@ impl From<pest::error::Error<Rule>> for PermalinkError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Permalink {
     pub country: WellKnownCountry,
-    pub language: String,
+    pub default_language: String,
     pub service_type: String,
     pub title: Option<String>,
     pub id: String,
@@ -66,7 +66,7 @@ impl Permalink {
             permalink.country = WellKnownCountry::from_str(country)?;
         }
 
-        permalink.language = language_from_well_known_country(permalink.country);
+        permalink.default_language = language_from_well_known_country(permalink.country);
 
         let service_type = pathname_rules
             .next()
@@ -107,7 +107,7 @@ impl Permalink {
         format!(
             "{}/{}/{}/{}/",
             "https://www.karrotmarket.com",
-            self.country.to_string(),
+            self.country,
             self.service_type,
             self.id,
         )
@@ -165,7 +165,7 @@ impl Default for Permalink {
     fn default() -> Self {
         Self {
             country: WellKnownCountry::KR,
-            language: "ko".to_string(),
+            default_language: "ko".to_string(),
             service_type: "about".to_string(),
             title: None,
             id: "blank".to_string(),
@@ -178,7 +178,7 @@ impl Display for Permalink {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(fmt, "permalink")?;
         writeln!(fmt, "\tcountry: {}", self.country)?;
-        writeln!(fmt, "\tlanguage: {}", self.language)?;
+        writeln!(fmt, "\tdefault_language: {}", self.default_language)?;
         writeln!(fmt, "\tservice_type: {}", self.service_type)?;
         writeln!(fmt, "\ttitle: {:?}", self.title)?;
         writeln!(fmt, "\tid: {}", self.id)?;
@@ -295,7 +295,7 @@ mod tests {
     fn test_parse_valid_permalink() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.default_language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, Some("당근마켓-대한민국-1등-동네-앱".to_string()));
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -305,7 +305,7 @@ mod tests {
     fn test_parse_valid_permalink_without_trailing_slash() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/당근마켓-대한민국-1등-동네-앱-id1018769995").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.default_language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, Some("당근마켓-대한민국-1등-동네-앱".to_string()));
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -315,7 +315,7 @@ mod tests {
     fn test_parse_valid_permalink_without_title() {
         let permalink = Permalink::parse_str("https://www.daangn.com/kr/app/id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.default_language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, None);
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -337,7 +337,7 @@ mod tests {
     fn test_parse_well_known_host() {
         let permalink = Permalink::parse_str("https://www.daangn.com/ca/app/id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.default_language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, None);
         assert_eq!(permalink.id, "id1018769995".to_string());
@@ -347,7 +347,7 @@ mod tests {
     fn test_parse_country_case_insensitive() {
         let permalink = Permalink::parse_str("https://www.daangn.com/KR/app/id1018769995/").unwrap();
         assert_eq!(permalink.country, WellKnownCountry::KR);
-        assert_eq!(permalink.language, "ko".to_string());
+        assert_eq!(permalink.default_language, "ko".to_string());
         assert_eq!(permalink.service_type, "app".to_string());
         assert_eq!(permalink.title, None);
         assert_eq!(permalink.id, "id1018769995".to_string());
