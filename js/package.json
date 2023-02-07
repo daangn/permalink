@@ -1,6 +1,7 @@
 {
   "name": "@karrotmarket/permalink",
   "version": "0.2.0",
+  "license": "MIT",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./index.d.ts",
