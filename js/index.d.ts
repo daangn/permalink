@@ -1,25 +1,6 @@
 export type Permalink = {
 
   /**
-   * Full URL encoded
-   *
-   * Note: It might be not exactly equal to input URL because of the trailing slash
-   */
-  href: string,
-
-  /**
-   * URL Origin
-   */
-  origin: string,
-
-  /**
-   * URL Pathname
-   *
-   * Note: It might be not exactly equal to input URL because of the trailing slash
-   */
-  pathname: string,
-
-  /**
    * Country code
    *
    * It should be valid in terms of ISO 3166-1 (alpha 2)
@@ -31,12 +12,12 @@ export type Permalink = {
    *
    * It should be valid in terms of ISO 639-1
    */
-  lang: string,
+  defaultLanguage: string,
 
   /**
    * Name of the content type
    */
-  contentType: string,
+  serviceType: string,
 
   /**
    * Title of the content, for SEO purpose
