@@ -1,6 +1,6 @@
 {
   "name": "@karrotmarket/permalink",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./index.d.ts",
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "files": [
-    "./index.d.ts",
+    "index.d.ts",
     "src",
     "lib"
   ],
