@@ -1,5 +1,4 @@
 import slugify from 'cjk-slug';
-import { parsePathname } from './pathname.js';
 
 let wellKnownOriginToCountry = {
   'https://daangn.com': 'kr',
@@ -44,8 +43,9 @@ export function parse(urlLike) {
 
   let { origin, pathname } = url;
 
-  let parseResult = parsePathname(pathname);
-  if (!parseResult) {
+  let pathnamePattern = /\/(?<country>[a-zA-Z]{2})\/(?<serviceType>[a-z\-]{3,})\/(?<slug>((?<title>((([a-z0-9]|\%[0-9A-F]{2})+)\-?)+?)\-)?(?<id>[a-zA-Z0-9]{8,}))(\/(?<data>[a-zA-Z0-9\-\_]+))?\/?/;
+  let match = pathname.match(pathnamePattern);
+  if (!match?.groups) {
     throw new TypeError('Invalid permalink format');
   };
 
@@ -55,10 +55,12 @@ export function parse(urlLike) {
     title = null,
     id,
     data = null,
-  } = parseResult;
+  } = match.groups;
 
   country = country.toLowerCase();
   country = wellKnownOriginToCountry[origin] || wellKnownOriginToCountry[aliases[origin]] || country;
+
+  title &&= decodeURIComponent(title);
 
   let defaultLanguage = wellKnownCountryToLanguage[country];
   if (!defaultLanguage) {

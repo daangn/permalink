@@ -1,22 +1,18 @@
 use std::{str::FromStr, fmt::Display};
 
+use lazy_static::lazy_static;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
-use pest::Parser;
-use pest_derive::Parser;
-use url::Url;
+use regex::Regex;
+use url::{Url, Origin};
 
 use crate::cjk_slug;
-
-#[derive(Debug, Parser)]
-#[grammar = "permalink.pest"]
-struct PathnameParser;
 
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum PermalinkError {
     #[error("invalid url")]
     InvalidUrl(Box<url::ParseError>),
     #[error("invalid permalink")]
-    InvalidPermalink(Box<pest::error::Error<Rule>>),
+    InvalidPermalink,
     #[error("unknown country code `{0}`")]
     UnknownCountry(String),
 }
@@ -24,12 +20,6 @@ pub enum PermalinkError {
 impl From<url::ParseError> for PermalinkError {
     fn from(err: url::ParseError) -> Self {
         Self::InvalidUrl(Box::new(err))
-    }
-}
-
-impl From<pest::error::Error<Rule>> for PermalinkError {
-    fn from(err: pest::error::Error<Rule>) -> Self {
-        Self::InvalidPermalink(Box::new(err))
     }
 }
 
@@ -50,57 +40,47 @@ impl Permalink {
     }
 
     pub fn parse_url(url: Url) -> Result<Self, PermalinkError> {
-        let pathname = PathnameParser::parse(Rule::pathname, url.path())?.next().unwrap();
+        lazy_static! {
+            static ref RE: Regex = Regex::new(
+                r"/(?P<country>[a-zA-Z]{2})/(?P<service_type>[a-z\-]{3,})/(?P<slug>((?P<title>((([a-z0-9]|%[0-9A-F]{2})+)\-?)+?)\-)?(?P<id>[a-zA-Z0-9]{8,}))(/(?P<data>[a-zA-Z0-9\-_]+))?/?",
+            ).unwrap();
+        }
 
-        let mut permalink = Permalink::default();
+        let pathname = url.path();
 
-        let mut pathname_rules = pathname.into_inner();
+        if let Some(caps) = RE.captures(pathname) {
+            let country = match url.origin().to_well_known_country() {
+                Some(country) => country,
+                None => {
+                    let value = caps.name("country").unwrap().as_str();
+                    value.to_well_known_country()
+                        .ok_or_else(|| PermalinkError::UnknownCountry(value.to_string()))?
+                },
+            };
 
-        let country = pathname_rules
-            .next()
-            .unwrap()
-            .as_str();
-        if let Some(country) = well_known_country_from_origin(url.origin().ascii_serialization()) {
-            permalink.country = country;
+            let default_language = country.default_language();
+
+            let service_type = caps.name("service_type").unwrap().as_str().to_string();
+
+            let title = caps.name("title")
+                .map(|m| percent_decode_str(m.as_str()).decode_utf8().unwrap().to_string());
+
+            let id = caps.name("id").unwrap().as_str().to_string();
+
+            let data = caps.name("data")
+                .map(|m| m.as_str().to_string());
+
+            Ok(Permalink {
+                country,
+                default_language,
+                service_type,
+                title,
+                id,
+                data,
+            })
         } else {
-            permalink.country = WellKnownCountry::from_str(country)?;
+            Err(PermalinkError::InvalidPermalink)
         }
-
-        permalink.default_language = language_from_well_known_country(permalink.country);
-
-        let service_type = pathname_rules
-            .next()
-            .unwrap()
-            .as_str();
-        permalink.service_type = service_type.to_string();
-
-        let slug_rules = pathname_rules
-            .next()
-            .unwrap()
-            .into_inner();
-        for rule in slug_rules {
-            match rule.as_rule() {
-                Rule::title => {
-                    let mut chars = rule.as_str().chars();
-                    chars.next_back();
-                    permalink.title = Some(
-                        percent_decode_str(chars.as_str())
-                            .decode_utf8()
-                            .unwrap()
-                            .to_string()
-                    );
-                },
-                Rule::id => {
-                    permalink.id = rule.as_str().to_string();
-                },
-                _ => {},
-            }
-        }
-
-        permalink.data = pathname_rules.next()
-            .map(|rule| rule.as_str().to_string());
-
-        Ok(permalink)
     }
 
     pub fn normalize(&self) -> String {
@@ -147,7 +127,13 @@ impl Permalink {
             .add(b'}')
             .add(b'~');
 
-        let origin = well_known_origin_from_country(self.country);
+        let origin = match self.country {
+            WellKnownCountry::CA => "https://ca.karrotmarket.com".to_string(),
+            WellKnownCountry::JP => "https://jp.karrotmarket.com".to_string(),
+            WellKnownCountry::KR => "https://www.daangn.com".to_string(),
+            WellKnownCountry::UK => "https://uk.karrotmarket.com".to_string(),
+            WellKnownCountry::US => "https://us.karrotmarket.com".to_string(),
+        };
         format!(
             "{}/{}/{}/{}/",
             origin,
@@ -158,19 +144,6 @@ impl Permalink {
                 NON_URL_SAFE,
             ),
         )
-    }
-}
-
-impl Default for Permalink {
-    fn default() -> Self {
-        Self {
-            country: WellKnownCountry::KR,
-            default_language: "ko".to_string(),
-            service_type: "about".to_string(),
-            title: None,
-            id: "blank".to_string(),
-            data: None,
-        }
     }
 }
 
@@ -246,44 +219,52 @@ impl Display for WellKnownCountry {
     }
 }
 
-fn well_known_country_from_origin(origin: String) -> Option<WellKnownCountry> {
-    match normalize_origin(origin).as_str() {
-        "https://www.daangn.com" => Some(WellKnownCountry::KR),
-        "https://www.karrotmarket.com" => None,
-        "https://ca.karrotmarket.com" => Some(WellKnownCountry::CA),
-        "https://jp.karrotmarket.com" => Some(WellKnownCountry::JP),
-        "https://uk.karrotmarket.com" => Some(WellKnownCountry::UK),
-        "https://us.karrotmarket.com" => Some(WellKnownCountry::US),
-        "https://kr.karrotmarket.com" => Some(WellKnownCountry::KR),
-        _ => None,
+trait ToWellKnownCountry {
+    fn to_well_known_country(&self) -> Option<WellKnownCountry>;
+}
+
+impl ToWellKnownCountry for str {
+    fn to_well_known_country(&self) -> Option<WellKnownCountry> {
+        WellKnownCountry::from_str(self).ok()
     }
 }
 
-fn well_known_origin_from_country(country: WellKnownCountry) -> String {
-    match country {
-        WellKnownCountry::CA => "https://ca.karrotmarket.com".to_string(),
-        WellKnownCountry::JP => "https://jp.karrotmarket.com".to_string(),
-        WellKnownCountry::KR => "https://www.daangn.com".to_string(),
-        WellKnownCountry::UK => "https://uk.karrotmarket.com".to_string(),
-        WellKnownCountry::US => "https://us.karrotmarket.com".to_string(),
+impl ToWellKnownCountry for String {
+    fn to_well_known_country(&self) -> Option<WellKnownCountry> {
+        WellKnownCountry::from_str(self.as_str()).ok()
     }
 }
 
-fn language_from_well_known_country(country: WellKnownCountry) -> String {
-    match country {
-        WellKnownCountry::CA => "en".to_string(),
-        WellKnownCountry::JP => "ja".to_string(),
-        WellKnownCountry::KR => "ko".to_string(),
-        WellKnownCountry::UK => "en".to_string(),
-        WellKnownCountry::US => "en".to_string(),
+impl ToWellKnownCountry for Origin {
+    fn to_well_known_country(&self) -> Option<WellKnownCountry> {
+        let origin = self.ascii_serialization();
+        let origin = match origin.as_str() {
+            "https://daangn.com" => "https://www.daangn.com",
+            "https://karrotmarket.com" => "https://www.karrotmarket.com",
+            _ => origin.as_str(),
+        };
+        match origin {
+            "https://www.daangn.com" => Some(WellKnownCountry::KR),
+            "https://www.karrotmarket.com" => None,
+            "https://ca.karrotmarket.com" => Some(WellKnownCountry::CA),
+            "https://jp.karrotmarket.com" => Some(WellKnownCountry::JP),
+            "https://uk.karrotmarket.com" => Some(WellKnownCountry::UK),
+            "https://us.karrotmarket.com" => Some(WellKnownCountry::US),
+            "https://kr.karrotmarket.com" => Some(WellKnownCountry::KR),
+            _ => None,
+        }       
     }
 }
 
-fn normalize_origin(origin: String) -> String {
-    match origin.as_str() {
-        "https://daangn.com" => "https://www.daangn.com".to_string(),
-        "https://karrotmarket.com" => "https://www.karrotmarket.com".to_string(),
-        _ => origin,
+impl WellKnownCountry {
+    fn default_language(&self) -> String {
+        match self {
+            Self::CA => "en".to_string(),
+            Self::JP => "ja".to_string(),
+            Self::KR => "ko".to_string(),
+            Self::UK => "en".to_string(),
+            Self::US => "en".to_string(),
+        }
     }
 }
 
@@ -330,7 +311,7 @@ mod tests {
     #[test]
     fn test_parse_invalid_permalink() {
         let result = Permalink::parse_str("https://apps.apple.com/kr/app/%EB%8B%B9%EA%B7%BC%EB%A7%88%EC%BC%93/id1018769995");
-        assert!(matches!(result, Err(PermalinkError::InvalidPermalink(_))));
+        assert!(matches!(result, Err(PermalinkError::InvalidPermalink)));
     }
 
     #[test]
