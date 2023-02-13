@@ -2,7 +2,7 @@
 name = "karrot-permalink"
 description = "Permalink URL parser for Karrot's web contents"
 repository = "https://github.com/daangn/permalink"
-version = "0.2.0"
+version = "0.3.0"
 license = "MIT"
 edition = "2021"
 
